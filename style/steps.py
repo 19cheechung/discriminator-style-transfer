@@ -3,11 +3,12 @@ import utils
 import torch
 from torch.nn import functional as F
 
-def disc_step(model, opt, gen_img, style_img):
+def disc_step(model, opt, gen_img_logits, style_img):
     model.train()
     opt.zero_grad()
 
     d_real, _ = model(style_img)
+    gen_img = torch.sigmoid(gen_img_logits)
     d_gen, _ = model(gen_img)
 
     if model.disc_mode == 'wass':
@@ -32,10 +33,11 @@ def disc_step(model, opt, gen_img, style_img):
     return loss.item()
 
 
-def sc_step(model, opt, gen_img, args):
+def sc_step(model, opt, gen_img_logits, args):
     model.eval()
     opt.zero_grad()
 
+    gen_img = torch.sigmoid(gen_img_logits)
     if args.distance.startswith('disc-'):
         disc_real, content_loss = model(gen_img)
         style_loss = -disc_real

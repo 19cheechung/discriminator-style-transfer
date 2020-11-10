@@ -17,9 +17,9 @@ def get_optimizers(model, gen_img, args):
     return img_opt, disc_opt
 
 
-def transfer(args, gen_img, style_img, model):
+def transfer(args, gen_img_logits, style_img, model):
     # Optimizers
-    img_opt, disc_opt = get_optimizers(model, gen_img, args)
+    img_opt, disc_opt = get_optimizers(model, gen_img_logits, args)
 
     # Losses
     style_losses, content_losses = [], []
@@ -30,16 +30,13 @@ def transfer(args, gen_img, style_img, model):
     for _ in pbar:
         if args.distance.startswith('disc-'):
             # Optimize the discriminator
-            disc_loss = steps.disc_step(model, disc_opt, gen_img, style_img)
+            disc_loss = steps.disc_step(model, disc_opt, gen_img_logits, style_img)
             disc_losses.append(disc_loss)
 
         # Optimize over style and content
-        style_loss, content_loss = steps.sc_step(model, img_opt, gen_img, args)
+        style_loss, content_loss = steps.sc_step(model, img_opt, gen_img_logits, args)
         style_losses.append(style_loss)
         content_losses.append(content_loss)
-
-        # Clamp the values of updated input image
-        gen_img.data.clamp_(0, 1)
 
         # Progress Bar
         pbar_str = f'Style: {style_losses[-1]:.1f} Content: {content_losses[-1]:.1f} '
